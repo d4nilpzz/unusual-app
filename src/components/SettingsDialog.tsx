@@ -14,6 +14,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { comboFromEvent, formatCombo } from '../lib/shortcuts'
 import type { AppConfig, MarkdownShortcuts, Priority, PriorityColor } from '../types'
+import { UpdateSection } from './UpdateSection'
 
 const COLOR_OPTIONS: { value: PriorityColor; label: string }[] = [
   { value: 'neutral', label: 'Gray' },
@@ -193,6 +194,10 @@ export function SettingsDialog({ config, onSave, onClose }: SettingsDialogProps)
                   />
                 ))}
               </VStack>
+
+              <Divider />
+
+              <UpdateSection />
             </VStack>
           </LayoutContent>
         }
