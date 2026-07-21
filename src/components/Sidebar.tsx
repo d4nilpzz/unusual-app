@@ -6,6 +6,7 @@ import type { Project } from '../types'
 interface SidebarProps {
   projects: Project[]
   selectedId: string | null
+  version: string
   onSelect: (id: string) => void
   onCreate: () => void
   onRename: (id: string) => void
@@ -16,6 +17,7 @@ interface SidebarProps {
 export function Sidebar({
   projects,
   selectedId,
+  version,
   onSelect,
   onCreate,
   onRename,
@@ -77,7 +79,7 @@ export function Sidebar({
         ))}
       </div>
 
-      <div className="border-t border-zinc-800 p-2">
+      <div className="flex items-center justify-between border-t border-zinc-800 p-2">
         <IconButton
           label="Settings"
           icon={<Settings size={16} />}
@@ -85,6 +87,7 @@ export function Sidebar({
           tooltip="Settings"
           onClick={onOpenSettings}
         />
+        {version && <span className="pr-1 text-xs text-zinc-600">v{version}</span>}
       </div>
     </aside>
   )

@@ -1,3 +1,4 @@
+import { getVersion } from '@tauri-apps/api/app'
 import { LayoutGrid } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ConfirmModal, PromptModal } from './components/Modal'
@@ -27,14 +28,18 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>(store.DEFAULT_CONFIG)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
+  const [version, setVersion] = useState('')
 
   useEffect(() => {
-    Promise.all([store.listProjects(), store.loadConfig()]).then(([list, loadedConfig]) => {
-      setProjects(list)
-      setConfig(loadedConfig)
-      if (list.length > 0) setSelectedProjectId(list[0].id)
-      setReady(true)
-    })
+    Promise.all([store.listProjects(), store.loadConfig(), getVersion()]).then(
+      ([list, loadedConfig, appVersion]) => {
+        setProjects(list)
+        setConfig(loadedConfig)
+        setVersion(appVersion)
+        if (list.length > 0) setSelectedProjectId(list[0].id)
+        setReady(true)
+      },
+    )
   }, [])
 
   const handleSaveConfig = async (next: AppConfig) => {
@@ -126,6 +131,7 @@ export default function App() {
       <Sidebar
         projects={projects}
         selectedId={selectedProjectId}
+        version={version}
         onSelect={(id) => setSelectedProjectId(id)}
         onCreate={() => setModal({ kind: 'new-project' })}
         onRename={(id) => {
