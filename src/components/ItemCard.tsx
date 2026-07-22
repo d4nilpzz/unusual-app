@@ -1,16 +1,18 @@
-import { FileText, LayoutDashboard, PenTool, Pencil, Trash2 } from 'lucide-react'
+import { Calendar, FileText, LayoutDashboard, PenTool, Pencil, Trash2 } from 'lucide-react'
 import type { ProjectItem } from '../types'
 
 const ICONS = {
   whiteboard: PenTool,
   kanban: LayoutDashboard,
   markdown: FileText,
+  calendar: Calendar,
 } as const
 
 const LABELS = {
   whiteboard: 'Whiteboard',
   kanban: 'Board',
   markdown: 'Note',
+  calendar: 'Calendar',
 } as const
 
 interface ItemCardProps {
@@ -25,11 +27,11 @@ export function ItemCard({ item, onOpen, onRename, onDelete }: ItemCardProps) {
   return (
     <button
       onClick={onOpen}
-      className="group relative flex aspect-4/3 flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-left transition-colors hover:border-zinc-600 hover:bg-zinc-900"
+      className="group relative flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-left transition-colors hover:border-zinc-600 hover:bg-zinc-900"
     >
       <div className="flex items-center justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300">
-          <Icon size={16} />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300">
+          <Icon size={15} />
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100">
           <span

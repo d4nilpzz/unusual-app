@@ -55,7 +55,7 @@ export function Sidebar({
             }`}
             onClick={() => onSelect(p.id)}
           >
-            <Folder size={15} className="shrink-0 opacity-70" />
+            <Folder size={15} className="ml-1 shrink-0 opacity-70" />
             <span className="flex-1 truncate">{p.name}</span>
             <div
               className="opacity-0 group-hover:opacity-100"

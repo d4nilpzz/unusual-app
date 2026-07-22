@@ -5,11 +5,15 @@ import { ConfirmModal, PromptModal } from './components/Modal'
 import { ProjectView } from './components/ProjectView'
 import { SettingsDialog } from './components/SettingsDialog'
 import { Sidebar } from './components/Sidebar'
+import { checkCalendarReminders } from './lib/notifications'
 import * as store from './lib/store'
 import type { AppConfig, ItemType, Project, ProjectItem } from './types'
+import { CalendarView } from './views/CalendarView'
 import { KanbanView } from './views/KanbanView'
 import { MarkdownView } from './views/MarkdownView'
 import { WhiteboardView } from './views/WhiteboardView'
+
+const REMINDER_CHECK_INTERVAL_MS = 30 * 60 * 1000
 
 type ModalState =
   | { kind: 'none' }
@@ -46,6 +50,12 @@ export default function App() {
     await store.saveConfig(next)
     setConfig(next)
   }
+
+  useEffect(() => {
+    checkCalendarReminders()
+    const interval = setInterval(checkCalendarReminders, REMINDER_CHECK_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -96,6 +106,7 @@ export default function App() {
       whiteboard: 'New whiteboard',
       kanban: 'New board',
       markdown: 'New note',
+      calendar: 'New calendar',
     }
     const item = await store.createItem(selectedProjectId, labels[type], type)
     await refreshItems(selectedProjectId)
@@ -164,6 +175,13 @@ export default function App() {
               projectId={selectedProject.id}
               item={openItem}
               priorities={config.priorities}
+              onBack={() => setOpenItem(null)}
+              onRenamed={handleItemRenamedInline}
+            />
+          ) : openItem.type === 'calendar' ? (
+            <CalendarView
+              projectId={selectedProject.id}
+              item={openItem}
               onBack={() => setOpenItem(null)}
               onRenamed={handleItemRenamedInline}
             />

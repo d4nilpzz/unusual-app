@@ -1,4 +1,4 @@
-import { FileText, LayoutDashboard, PenTool, Plus } from 'lucide-react'
+import { Calendar, FileText, LayoutDashboard, PenTool, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ItemType, Project, ProjectItem } from '../types'
 import { ItemCard } from './ItemCard'
@@ -16,6 +16,7 @@ const NEW_ITEM_OPTIONS: { type: ItemType; label: string; icon: typeof PenTool }[
   { type: 'whiteboard', label: 'Whiteboard', icon: PenTool },
   { type: 'kanban', label: 'Board', icon: LayoutDashboard },
   { type: 'markdown', label: 'Note', icon: FileText },
+  { type: 'calendar', label: 'Calendar', icon: Calendar },
 ]
 
 export function ProjectView({

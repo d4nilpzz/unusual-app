@@ -14,41 +14,8 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { comboFromEvent, formatCombo } from '../lib/shortcuts'
 import type { AppConfig, MarkdownShortcuts, Priority, PriorityColor } from '../types'
+import { COLOR_SELECTOR_OPTIONS } from './colorPalette'
 import { UpdateSection } from './UpdateSection'
-
-const COLOR_OPTIONS: { value: PriorityColor; label: string }[] = [
-  { value: 'neutral', label: 'Gray' },
-  { value: 'red', label: 'Red' },
-  { value: 'orange', label: 'Orange' },
-  { value: 'yellow', label: 'Yellow' },
-  { value: 'green', label: 'Green' },
-  { value: 'teal', label: 'Teal' },
-  { value: 'cyan', label: 'Cyan' },
-  { value: 'blue', label: 'Blue' },
-  { value: 'purple', label: 'Purple' },
-  { value: 'pink', label: 'Pink' },
-]
-
-function Dot({ color }: { color: PriorityColor }) {
-  const hue = color === 'neutral' ? 'gray' : color
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        width: 10,
-        height: 10,
-        borderRadius: 999,
-        background: `var(--color-icon-${hue})`,
-      }}
-    />
-  )
-}
-
-const SELECTOR_OPTIONS = COLOR_OPTIONS.map((c) => ({
-  value: c.value,
-  label: c.label,
-  icon: <Dot color={c.value} />,
-}))
 
 const SHORTCUT_ROWS: { key: keyof MarkdownShortcuts; label: string }[] = [
   { key: 'duplicateLine', label: 'Duplicate line' },
@@ -154,7 +121,7 @@ export function SettingsDialog({ config, onSave, onClose }: SettingsDialogProps)
                       label="Color"
                       isLabelHidden
                       width={150}
-                      options={SELECTOR_OPTIONS}
+                      options={COLOR_SELECTOR_OPTIONS}
                       value={item.color}
                       onChange={(v) => updateColor(item.id, v as PriorityColor)}
                     />

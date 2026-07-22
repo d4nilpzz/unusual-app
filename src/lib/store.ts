@@ -7,7 +7,14 @@ import {
   remove,
   writeTextFile,
 } from '@tauri-apps/plugin-fs'
-import type { AppConfig, ItemType, KanbanData, Project, ProjectItem } from '../types'
+import type {
+  AppConfig,
+  CalendarData,
+  ItemType,
+  KanbanData,
+  Project,
+  ProjectItem,
+} from '../types'
 
 let rootDirCache: string | null = null
 
@@ -131,6 +138,9 @@ export async function createItem(
     await writeTextFile(filePath, `# ${name}\n\n`)
   } else if (type === 'kanban') {
     await writeTextFile(filePath, JSON.stringify(DEFAULT_KANBAN, null, 2))
+  } else if (type === 'calendar') {
+    const empty: CalendarData = { events: [] }
+    await writeTextFile(filePath, JSON.stringify(empty, null, 2))
   } else {
     await writeTextFile(filePath, JSON.stringify({}, null, 2))
   }
@@ -192,6 +202,26 @@ export async function saveItemJson(
   const filePath = await join(dir, await itemFileName({ id: itemId, type: itemType }))
   await writeTextFile(filePath, JSON.stringify(data, null, 2))
   await touchItem(projectId, itemId)
+}
+
+export interface CalendarEventRef {
+  projectId: string
+  itemId: string
+  itemName: string
+}
+
+export async function listAllCalendarItems(): Promise<CalendarEventRef[]> {
+  const projects = await listProjects()
+  const refs: CalendarEventRef[] = []
+  for (const project of projects) {
+    const items = await listItems(project.id)
+    for (const item of items) {
+      if (item.type === 'calendar') {
+        refs.push({ projectId: project.id, itemId: item.id, itemName: item.name })
+      }
+    }
+  }
+  return refs
 }
 
 export const DEFAULT_CONFIG: AppConfig = {

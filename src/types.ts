@@ -1,4 +1,4 @@
-export type ItemType = 'whiteboard' | 'kanban' | 'markdown'
+export type ItemType = 'whiteboard' | 'kanban' | 'markdown' | 'calendar'
 
 export interface Project {
   id: string
@@ -68,4 +68,17 @@ export interface MarkdownShortcuts {
 export interface AppConfig {
   priorities: Priority[]
   markdownShortcuts: MarkdownShortcuts
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  date: string // YYYY-MM-DD
+  color: PriorityColor
+  notifyDaysBefore: number | null
+  lastNotifiedDate?: string // YYYY-MM-DD; guards against re-notifying the same day
+}
+
+export interface CalendarData {
+  events: CalendarEvent[]
 }
