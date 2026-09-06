@@ -5,7 +5,7 @@
 <h1 align="center">Unusual</h1>
 
 <p align="center">
-  Some app...
+ Unusual brings whiteboards, kanban boards, markdown notes, and a calendar into a single, quiet workspace. Organize everything into projects and keep it all on your machine.
 </p>
 
 <div align="center">
