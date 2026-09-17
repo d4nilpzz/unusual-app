@@ -32,3 +32,15 @@ jobs:
           releaseName: 'Unusual ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
+
+      # Stable-named copy of the installer for the website download button.
+      # Its download count = new installs; the versioned setup (used by the
+      # updater) = updates.
+      - name: Upload website installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Copy-Item $setup.FullName Unusual-Setup.exe
+          gh release upload "${{ github.ref_name }}" Unusual-Setup.exe --clobber

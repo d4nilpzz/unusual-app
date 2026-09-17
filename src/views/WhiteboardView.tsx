@@ -22,31 +22,61 @@ export function WhiteboardView({ projectId, item, onBack, onRenamed }: Whiteboar
     let cancelled = false
     loadItemJson<any>(projectId, item.id, 'whiteboard').then((data) => {
       if (cancelled) return
-      setInitialData(data && data.elements ? data : { elements: [], appState: {} })
+      setInitialData(
+        data && data.elements
+          ? { ...data, files: data.files ?? {} }
+          : { elements: [], appState: {}, files: {} },
+      )
     })
     return () => {
       cancelled = true
     }
   }, [projectId, item.id])
 
+  const save = () => {
+    const api = apiRef.current
+    if (!api) return
+    const elements = api.getSceneElements()
+    const appState = api.getAppState()
+    // Only persist image files still referenced by the scene
+    const allFiles = api.getFiles()
+    const files: Record<string, unknown> = {}
+    for (const el of elements) {
+      if (el.type === 'image' && el.fileId && allFiles[el.fileId]) {
+        files[el.fileId] = allFiles[el.fileId]
+      }
+    }
+    saveItemJson(projectId, item.id, 'whiteboard', {
+      elements,
+      appState: {
+        viewBackgroundColor: appState.viewBackgroundColor,
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+        zoom: appState.zoom,
+      },
+      files,
+    })
+  }
+
   const scheduleSave = () => {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(() => {
-      const api = apiRef.current
-      if (!api) return
-      const elements = api.getSceneElements()
-      const appState = api.getAppState()
-      saveItemJson(projectId, item.id, 'whiteboard', {
-        elements,
-        appState: {
-          viewBackgroundColor: appState.viewBackgroundColor,
-          scrollX: appState.scrollX,
-          scrollY: appState.scrollY,
-          zoom: appState.zoom,
-        },
-      })
+      saveTimeout.current = null
+      save()
     }, 600)
   }
+
+  // Flush a pending save when the whiteboard is closed
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current)
+        saveTimeout.current = null
+        save()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, item.id])
 
   const handleRename = async (name: string) => {
     await renameItem(projectId, item.id, name)
