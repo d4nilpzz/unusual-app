@@ -15,6 +15,7 @@ import { useState, type KeyboardEvent } from 'react'
 import { comboFromEvent, formatCombo } from '../lib/shortcuts'
 import type { AppConfig, MarkdownShortcuts, Priority, PriorityColor } from '../types'
 import { COLOR_SELECTOR_OPTIONS } from './colorPalette'
+import { SyncSection } from './SyncSection'
 import { UpdateSection } from './UpdateSection'
 
 const SHORTCUT_ROWS: { key: keyof MarkdownShortcuts; label: string }[] = [
@@ -69,10 +70,11 @@ function ShortcutRow({ label, combo, onChange }: ShortcutRowProps) {
 interface SettingsDialogProps {
   config: AppConfig
   onSave: (config: AppConfig) => void
+  onSynced?: () => void
   onClose: () => void
 }
 
-export function SettingsDialog({ config, onSave, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ config, onSave, onSynced, onClose }: SettingsDialogProps) {
   const [items, setItems] = useState<Priority[]>(config.priorities)
   const [shortcuts, setShortcuts] = useState<MarkdownShortcuts>(config.markdownShortcuts)
 
@@ -161,6 +163,10 @@ export function SettingsDialog({ config, onSave, onClose }: SettingsDialogProps)
                   />
                 ))}
               </VStack>
+
+              <Divider />
+
+              <SyncSection onSynced={onSynced} />
 
               <Divider />
 

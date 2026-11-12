@@ -1,12 +1,13 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { LayoutGrid } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmModal, PromptModal } from './components/Modal'
 import { ProjectView } from './components/ProjectView'
 import { SettingsDialog } from './components/SettingsDialog'
 import { Sidebar } from './components/Sidebar'
 import { checkCalendarReminders } from './lib/notifications'
 import * as store from './lib/store'
+import * as sync from './lib/sync'
 import type { AppConfig, ItemType, Project, ProjectItem } from './types'
 import { CalendarView } from './views/CalendarView'
 import { KanbanView } from './views/KanbanView'
@@ -14,6 +15,13 @@ import { MarkdownView } from './views/MarkdownView'
 import { WhiteboardView } from './views/WhiteboardView'
 
 const REMINDER_CHECK_INTERVAL_MS = 30 * 60 * 1000
+/** Long enough that a burst of edits becomes one commit, short enough
+ *  that closing the laptop rarely loses a round trip. */
+const AUTOSYNC_DEBOUNCE_MS = 8 * 1000
+const AUTOSYNC_INTERVAL_MS = 10 * 60 * 1000
+/** The editors autosave 500ms after the last keystroke, so Ctrl+S waits for
+ *  that write to land before pushing. */
+const SAVE_FLUSH_MS = 700
 
 type ModalState =
   | { kind: 'none' }
@@ -32,6 +40,7 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>(store.DEFAULT_CONFIG)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
+  const [dataVersion, setDataVersion] = useState(0)
   const [version, setVersion] = useState('')
 
   useEffect(() => {
@@ -45,6 +54,75 @@ export default function App() {
       },
     )
   }, [])
+
+  /** Re-reads everything after a sync pulled changes from another device. */
+  const reloadFromDisk = useCallback(async () => {
+    const [list, loadedConfig] = await Promise.all([store.listProjects(), store.loadConfig()])
+    setProjects(list)
+    setConfig(loadedConfig)
+    setSelectedProjectId((current) =>
+      current && list.some((p) => p.id === current) ? current : (list[0]?.id ?? null),
+    )
+    setDataVersion((version) => version + 1)
+  }, [])
+
+  const syncRunning = useRef(false)
+
+  const runSync = useCallback(async () => {
+    if (syncRunning.current) return
+    syncRunning.current = true
+    try {
+      const status = await sync.getStatus()
+      if (!status.connected) return
+      const report = await sync.syncNow()
+      if (report.pulled > 0 || report.removed > 0) await reloadFromDisk()
+    } catch {
+      // Offline, rate limited, or mid-reconnect. Settings shows the reason.
+    } finally {
+      syncRunning.current = false
+    }
+  }, [reloadFromDisk])
+
+  // Pull on open, push after edits settle, and check again periodically so a
+  // second device shows up without restarting the app.
+  useEffect(() => {
+    if (!ready) return
+
+    let debounce: ReturnType<typeof setTimeout> | undefined
+
+    void runSync()
+    const interval = setInterval(runSync, AUTOSYNC_INTERVAL_MS)
+    const unsubscribe = store.onDataChanged(() => {
+      if (debounce) clearTimeout(debounce)
+      debounce = setTimeout(runSync, AUTOSYNC_DEBOUNCE_MS)
+    })
+
+    return () => {
+      clearInterval(interval)
+      unsubscribe()
+      if (debounce) clearTimeout(debounce)
+    }
+  }, [ready, runSync])
+
+  // Ctrl+S pushes straight away instead of waiting out the debounce.
+  useEffect(() => {
+    if (!ready) return
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return
+      event.preventDefault()
+      setTimeout(() => void runSync(), SAVE_FLUSH_MS)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [ready, runSync])
+
+  // Refresh the item list after a pull without disturbing an open editor.
+  useEffect(() => {
+    if (dataVersion === 0 || !selectedProjectId) return
+    store.listItems(selectedProjectId).then(setItems)
+  }, [dataVersion, selectedProjectId])
 
   const handleSaveConfig = async (next: AppConfig) => {
     await store.saveConfig(next)
@@ -253,6 +331,7 @@ export default function App() {
         <SettingsDialog
           config={config}
           onSave={handleSaveConfig}
+          onSynced={reloadFromDisk}
           onClose={() => setSettingsOpen(false)}
         />
       )}

@@ -16,6 +16,23 @@ import type {
   ProjectItem,
 } from '../types'
 
+type ChangeListener = () => void
+
+const changeListeners = new Set<ChangeListener>()
+
+/** Notifies subscribers that something on disk changed, so a cloud sync can
+ *  follow. Reads stay silent; only writes fire. */
+export function onDataChanged(listener: ChangeListener): () => void {
+  changeListeners.add(listener)
+  return () => {
+    changeListeners.delete(listener)
+  }
+}
+
+function emitChange(): void {
+  for (const listener of changeListeners) listener()
+}
+
 let rootDirCache: string | null = null
 
 async function rootDir(): Promise<string> {
@@ -62,6 +79,7 @@ async function readMeta(projectId: string): Promise<ProjectMeta> {
 async function writeMeta(meta: ProjectMeta): Promise<void> {
   const path = await metaPath(meta.id)
   await writeTextFile(path, JSON.stringify(meta, null, 2))
+  emitChange()
 }
 
 export async function listProjects(): Promise<Project[]> {
@@ -100,6 +118,7 @@ export async function renameProject(projectId: string, name: string): Promise<vo
 export async function deleteProject(projectId: string): Promise<void> {
   const dir = await projectDir(projectId)
   await remove(dir, { recursive: true })
+  emitChange()
 }
 
 export async function listItems(projectId: string): Promise<ProjectItem[]> {
@@ -271,6 +290,7 @@ export async function loadConfig(): Promise<AppConfig> {
 export async function saveConfig(config: AppConfig): Promise<void> {
   const path = await configPath()
   await writeTextFile(path, JSON.stringify(config, null, 2))
+  emitChange()
 }
 
 export async function loadMarkdown(projectId: string, itemId: string): Promise<string> {
